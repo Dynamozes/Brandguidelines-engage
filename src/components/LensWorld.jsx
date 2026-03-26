@@ -126,7 +126,8 @@ const NegativeSpaceInfo = ({ lens }) => {
 };
 
 /* ── Main LensWorld ───────────────────────── */
-const LensWorld = ({ activeLens, setActiveLens, hoveredLens, setHoveredLens, scrollRef }) => {
+const LensWorld = ({ activeLens, setActiveLens, hoveredLens, setHoveredLens, scrollRef, introPhase }) => {
+  const isIntro = introPhase === 'particles' || introPhase === 'image-reveal';
   const [cursorPos, setCursorPos] = useState({ x: -999, y: -999 });
   const sectionRef = useRef();
 
@@ -158,8 +159,8 @@ const LensWorld = ({ activeLens, setActiveLens, hoveredLens, setHoveredLens, scr
       id="home"
       onMouseMove={handleMouseMove}
     >
-      {/* ── Background layers ── */}
-      {[
+      {/* ── Background layers — hidden during particle intro ── */}
+      {!isIntro && [
         { key: 'idle',       src: '/bg2@2x-100.jpg', filter: 'brightness(0.52)' },
         { key: 'build',      src: '/bg1@2x-100.jpg', filter: 'brightness(0.52) hue-rotate(0deg)' },
         { key: 'understand', src: '/bg2@2x-100.jpg', filter: 'brightness(0.60) hue-rotate(25deg)' },
@@ -206,57 +207,63 @@ const LensWorld = ({ activeLens, setActiveLens, hoveredLens, setHoveredLens, scr
         </Canvas>
       </div>
 
-      {/* ── IDLE & HOVERED: central prompt ── */}
-      <AnimatePresence mode="wait">
-        {!activeLens && (
-          <motion.div
-            key={hoveredLens === null ? 'welcome' : 'full'}
-            className="central-prompt"
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
-            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <motion.div 
-              className="prompt-eyebrow"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 1 }}
+      {/* ── IDLE & HOVERED: central prompt — hidden during particle intro ── */}
+      {!isIntro && (
+        <AnimatePresence mode="wait">
+          {!activeLens && (
+            <motion.div
+              key={hoveredLens === null ? 'welcome' : 'full'}
+              className="central-prompt"
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+              transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              <img src="/logo.png" alt="Gravity Engage Logo" className="prompt-logo" />
-              Gravity Engage Studio
+              <motion.div
+                className="prompt-eyebrow"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 1 }}
+              >
+                <img src="/logo.png" alt="Gravity Engage Logo" className="prompt-logo" />
+                Gravity Engage Studio
+              </motion.div>
+              <motion.h1
+                className="prompt-headline"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {hoveredLens === null ? (
+                  <>Welcome to Engage</>
+                ) : (
+                  <>
+                    We bridge the friction between<br />
+                    <span className="accent-text">complex human needs</span> and<br />
+                    high-fidelity technology
+                  </>
+                )}
+              </motion.h1>
             </motion.div>
-            <motion.h1 
-              className="prompt-headline"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {hoveredLens === null ? (
-                <>Welcome to Engage</>
-              ) : (
-                <>
-                  We bridge the friction between<br />
-                  <span className="accent-text">complex human needs</span> and<br />
-                  high-fidelity technology
-                </>
-              )}
-            </motion.h1>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      )}
 
-      {/* ── ACTIVE: Crystal orb (video inside sphere) ── */}
-      <AnimatePresence mode="wait">
-        {activeLens && <CrystalOrb key={activeLens} lens={activeLens} />}
-      </AnimatePresence>
+      {/* ── ACTIVE: Crystal orb — hidden during intro ── */}
+      {!isIntro && (
+        <AnimatePresence mode="wait">
+          {activeLens && <CrystalOrb key={activeLens} lens={activeLens} />}
+        </AnimatePresence>
+      )}
 
-      {/* ── ACTIVE: Negative space info ── */}
-      <AnimatePresence mode="wait">
-        {activeLens && (
-          <NegativeSpaceInfo key={activeLens} lens={activeLens} />
-        )}
-      </AnimatePresence>
+      {/* ── ACTIVE: Negative space info — hidden during intro ── */}
+      {!isIntro && (
+        <AnimatePresence mode="wait">
+          {activeLens && (
+            <NegativeSpaceInfo key={activeLens} lens={activeLens} />
+          )}
+        </AnimatePresence>
+      )}
 
     </section>
   );

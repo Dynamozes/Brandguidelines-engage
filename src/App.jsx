@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import LensWorld from './components/LensWorld';
 import WorkSection from './components/WorkSection';
 import AboutSection from './components/AboutSection';
+import ImageReveal from './components/ImageReveal';
 
 /* ── Contact section ── */
 const ContactSection = () => (
@@ -83,7 +84,15 @@ const App = () => {
   const [hoveredLens, setHoveredLens] = useState(null);
   const scrollRef = useRef(0);
 
-  /* Track scroll progress (0 = top of page, 1 = one viewport scrolled) */
+  /**
+   * introPhase controls the opening sequence:
+   *   'particles'     — particle wave plays (8 s)
+   *   'image-reveal'  — ImageReveal canvas animation (self-timed ~8 s)
+   *   'welcome'       — normal LensWorld UI
+   */
+  const [introPhase, setIntroPhase] = useState('particles');
+
+  /* Track scroll progress */
   useEffect(() => {
     const onScroll = () => {
       scrollRef.current = window.scrollY / window.innerHeight;
@@ -92,20 +101,37 @@ const App = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* Automate the lens interaction to play as an animation */
+  /* After 8 s of particles, move to image-reveal */
   useEffect(() => {
+    if (introPhase !== 'particles') return;
+    const t = setTimeout(() => setIntroPhase('image-reveal'), 8000);
+    return () => clearTimeout(t);
+  }, [introPhase]);
+
+  /* Automate the lens cycling — only once in 'welcome' phase */
+  useEffect(() => {
+    if (introPhase !== 'welcome') return;
     const lensKeys = [null, 'build', 'understand', 'industry'];
     let index = 0;
     const interval = setInterval(() => {
       index = (index + 1) % lensKeys.length;
       setHoveredLens(lensKeys[index]);
-    }, 4000); // cycle every 4 seconds
+    }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [introPhase]);
 
   return (
     <div style={{ background: 'var(--bg-void)' }}>
-      <Navbar activeLens={activeLens} />
+      {/* Navbar hidden during intro */}
+      {introPhase === 'welcome' && <Navbar activeLens={activeLens} />}
+
+      {/* Image-reveal overlay — shown between particle loop and welcome */}
+      {introPhase === 'image-reveal' && (
+        <ImageReveal
+          src="/landscape.png"
+          onDone={() => setIntroPhase('welcome')}
+        />
+      )}
 
       <main>
         <LensWorld
@@ -114,13 +140,18 @@ const App = () => {
           hoveredLens={hoveredLens}
           setHoveredLens={setHoveredLens}
           scrollRef={scrollRef}
+          introPhase={introPhase}
         />
-        <WorkSection />
-        <AboutSection />
-        <ContactSection />
+        {introPhase === 'welcome' && (
+          <>
+            <WorkSection />
+            <AboutSection />
+            <ContactSection />
+          </>
+        )}
       </main>
 
-      <Footer />
+      {introPhase === 'welcome' && <Footer />}
     </div>
   );
 };
